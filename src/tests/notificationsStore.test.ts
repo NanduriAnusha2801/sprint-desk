@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { useNotificationsStore } from '@/store/notificationsStore'
 import type { JsonPlaceholderPost } from '@/services/notifications/notificationsApi'
+import type { AppNotification } from '@/types'
 
 beforeEach(() => {
   useNotificationsStore.setState({ notifications: [], processedPostIds: [], seeded: false })
@@ -166,6 +167,25 @@ describe('notificationsStore', () => {
       useNotificationsStore.getState().pruneDuplicates()
 
       expect(useNotificationsStore.getState().notifications).toEqual(before)
+    })
+
+    it('evicts a "New activity" record even when it predates the `source` field entirely (oldest persisted shape)', () => {
+      useNotificationsStore.setState({
+        notifications: [
+          // No `source`/`sourcePostId` at all — the shape persisted by the very first
+          // (pre-dedup) implementation. This must not survive just because it doesn't
+          // match `source === 'poll'`.
+          { id: 1, title: 'New activity', message: 'msg', type: 'update', read: false, createdAt: '2026-08-01T00:00:00Z' } as unknown as AppNotification,
+          { id: 101, title: 'Task assigned', message: 'msg', type: 'task', read: false, createdAt: '2026-08-19T11:10:00Z', source: 'seed' },
+        ],
+        processedPostIds: [],
+      })
+
+      useNotificationsStore.getState().pruneDuplicates()
+
+      const afterPrune = useNotificationsStore.getState().notifications
+      expect(afterPrune).toHaveLength(1)
+      expect(afterPrune[0]?.title).toBe('Task assigned')
     })
 
     it('never leaves a stale record that recreates itself as a duplicate on the next poll', () => {

@@ -98,10 +98,21 @@ export const useNotificationsStore = create<NotificationsState>()(
        * bad record are possible there: literal duplicates of the same post,
        * and pre-format entries still carrying the old generic "New activity"
        * title (before notifications were given distinct, per-post text).
-       * Both are evicted outright — including freeing their post id back out
-       * of processedPostIds when known — rather than kept in a merged form,
-       * so the next poll cycle legitimately (re-)creates a single,
-       * correctly-formatted notification instead of a stale-looking one.
+       *
+       * The title check is intentionally NOT gated on `source === 'poll'`:
+       * the very earliest persisted shape predates the `source` field
+       * entirely, so a stale "New activity" record from that era has no
+       * `source` to match against and would otherwise slip past this check
+       * forever, re-appearing on every load — which is exactly the "New
+       * activity" repeated indefinitely symptom. No current code path
+       * (seed or poll) ever legitimately titles a notification "New
+       * activity", so matching on title alone is safe.
+       *
+       * Both kinds of bad record are evicted outright — including freeing
+       * their post id back out of processedPostIds when known — rather than
+       * kept in a merged form, so the next poll cycle legitimately
+       * (re-)creates a single, correctly-formatted notification instead of
+       * a stale-looking one.
        */
       pruneDuplicates: () =>
         set((state) => {
@@ -110,15 +121,14 @@ export const useNotificationsStore = create<NotificationsState>()(
           const kept: AppNotification[] = []
 
           for (const n of state.notifications) {
-            const isPoll = n.source === 'poll'
-            const isLegacyFormat = isPoll && n.title === 'New activity'
+            const isLegacyFormat = n.title === 'New activity'
 
             if (isLegacyFormat) {
               if (n.sourcePostId !== undefined) evictedPostIds.add(n.sourcePostId)
               continue
             }
 
-            if (isPoll && n.sourcePostId !== undefined) {
+            if (n.source === 'poll' && n.sourcePostId !== undefined) {
               if (seenPostIds.has(n.sourcePostId)) continue
               seenPostIds.add(n.sourcePostId)
             }
