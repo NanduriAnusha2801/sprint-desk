@@ -1,5 +1,6 @@
 import { Kanban, ListChecks, Radar, Rocket } from 'lucide-react'
 import { LoginForm } from '@/features/auth/LoginForm'
+import { ThemeToggle } from '@/components/layout/ThemeToggle'
 
 const PILLARS = [
   { icon: ListChecks, label: 'Plan' },
@@ -15,6 +16,9 @@ const DOT_GRID_STYLE = {
 export default function LoginPage() {
   return (
     <main className="relative flex min-h-dvh items-center justify-center overflow-hidden bg-surface-sunken px-6 py-10">
+      <div className="absolute right-4 top-4 z-10">
+        <ThemeToggle />
+      </div>
       <div className="pointer-events-none absolute inset-0 opacity-40" style={DOT_GRID_STYLE} aria-hidden="true" />
       <div
         className="pointer-events-none absolute -left-32 -top-32 size-96 rounded-full bg-accent/10 blur-3xl"

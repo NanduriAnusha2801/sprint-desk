@@ -14,7 +14,6 @@ const LABELS = ['Too short', 'Weak', 'Fair', 'Good', 'Strong']
 const COLORS = ['bg-danger', 'bg-danger', 'bg-warning', 'bg-info', 'bg-success']
 
 export function PasswordStrengthIndicator({ password }: { password: string }) {
-  if (!password) return null
   const score = scorePassword(password)
 
   return (
@@ -27,7 +26,8 @@ export function PasswordStrengthIndicator({ password }: { password: string }) {
           />
         ))}
       </div>
-      <p className="text-xs text-text-muted">{LABELS[score]}</p>
+      {/* No label until there's a password to grade — the bars alone are the empty state. */}
+      {password && <p className="text-xs text-text-muted">{LABELS[score]}</p>}
     </div>
   )
 }
